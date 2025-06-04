@@ -17,7 +17,7 @@ const BlueprintUploader = ({ onClose }: BlueprintUploaderProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const { addBlueprint, uploadProgress, setUploadProgress } = useBlueprintStore();
+  const { uploadBlueprint, uploadProgress, error } = useBlueprintStore();
   
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -53,30 +53,20 @@ const BlueprintUploader = ({ onClose }: BlueprintUploaderProps) => {
     }
   };
   
-  const handleUpload = () => {
-    if (!file) return;
+  const handleUpload = async () => {
+    if (!file || !name) return;
     
-    // Simulate upload process
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 10;
-      setUploadProgress(progress);
+    try {
+      await uploadBlueprint(file, {
+        name,
+        project,
+        description
+      });
       
-      if (progress >= 100) {
-        clearInterval(interval);
-        
-        // Add blueprint to store
-        addBlueprint({
-          name,
-          description,
-          project,
-          fileUrl: URL.createObjectURL(file),
-          pageCount: Math.floor(Math.random() * 10) + 1, // Random page count for demo
-        });
-        
-        onClose();
-      }
-    }, 300);
+      onClose();
+    } catch (error) {
+      console.error('Upload failed:', error);
+    }
   };
   
   return (

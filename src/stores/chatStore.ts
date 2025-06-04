@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { generateId } from '../lib/utils';
+import blueprintApi from '../lib/api';
 
 export type MessageRole = 'user' | 'assistant' | 'system';
 
@@ -27,31 +28,19 @@ interface ChatState {
   messages: Record<string, Message[]>;
   currentBlueprintId: string | null;
   isTyping: boolean;
+  error: string | null;
   
   setCurrentBlueprint: (blueprintId: string) => void;
-  sendMessage: (content: string) => void;
+  sendMessage: (content: string) => Promise<void>;
   clearChat: () => void;
+  setError: (error: string | null) => void;
 }
-
-// Sample assistant responses for demo purposes
-const sampleResponses = [
-  "Based on the blueprint, the living room dimensions are 16' x 14' with 9' ceilings. The total area is 224 square feet.",
-  "There are 3 bedrooms in this plan. The master bedroom is located on the east side with two additional bedrooms on the west side of the home.",
-  "The electrical plan shows 24 outlets throughout the main floor, with 8 GFCI outlets in the kitchen and bathrooms as required by code.",
-  "For this renovation, you'll need approximately 240 square feet of tile for the bathroom floors and shower walls, plus 10% extra for cuts and waste.",
-  "The load-bearing walls are highlighted on the structural plan. The main support beam spans 24 feet across the open concept kitchen and living area."
-];
-
-// Sample highlights for demonstration
-const sampleHighlights: Highlight[] = [
-  { x: 120, y: 150, width: 200, height: 180, color: 'rgba(37, 99, 235, 0.3)', page: 0 },
-  { x: 400, y: 300, width: 150, height: 100, color: 'rgba(249, 115, 22, 0.3)', page: 0 }
-];
 
 export const useChatStore = create<ChatState>((set, get) => ({
   messages: {},
   currentBlueprintId: null,
   isTyping: false,
+  error: null,
   
   setCurrentBlueprint: (blueprintId) => {
     set({ currentBlueprintId: blueprintId });
@@ -74,9 +63,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
   
-  sendMessage: (content) => {
+  sendMessage: async (content) => {
     const blueprintId = get().currentBlueprintId;
-    if (!blueprintId) return;
+    if (!blueprintId) {
+      set({ error: 'No blueprint selected' });
+      return;
+    }
     
     // Add user message
     const userMessageId = generateId();
@@ -93,32 +85,39 @@ export const useChatStore = create<ChatState>((set, get) => ({
           }
         ]
       },
-      isTyping: true
+      isTyping: true,
+      error: null
     }));
     
-    // Simulate AI response after a delay
-    setTimeout(() => {
-      const assistantMessageId = generateId();
-      const randomResponse = sampleResponses[Math.floor(Math.random() * sampleResponses.length)];
-      const includeHighlights = Math.random() > 0.5;
+    try {
+      // Send message to API
+      const response = await blueprintApi.sendMessage(blueprintId, content);
       
+      // Add assistant response
       set((state) => ({
         messages: {
           ...state.messages,
           [blueprintId]: [
             ...(state.messages[blueprintId] || []),
             {
-              id: assistantMessageId,
+              id: generateId(),
               role: 'assistant',
-              content: randomResponse,
+              content: response.response,
               timestamp: new Date(),
-              highlights: includeHighlights ? sampleHighlights : undefined
+              highlights: response.context ? JSON.parse(response.context).highlights : undefined,
+              measurements: response.context ? JSON.parse(response.context).measurements : undefined,
+              elements: response.context ? JSON.parse(response.context).elements : undefined
             }
           ]
         },
         isTyping: false
       }));
-    }, 1500);
+    } catch (error) {
+      set({ 
+        isTyping: false,
+        error: error instanceof Error ? error.message : 'Failed to send message'
+      });
+    }
   },
   
   clearChat: () => {
@@ -136,7 +135,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
             timestamp: new Date()
           }
         ]
-      }
+      },
+      error: null
     }));
-  }
+  },
+
+  setError: (error) => set({ error })
 }));

@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@pdftron/pdfjs-express-viewer": "^8.7.5",
     "@radix-ui/react-dialog": "^1.1.14",
     "@supabase/supabase-js": "^2.49.10",
     "@types/react-color": "^3.0.13",
@@ -19,11 +20,9 @@
     "clsx": "^2.1.1",
     "framer-motion": "^11.0.6",
     "lucide-react": "^0.344.0",
-    "pdfjs-dist": "4.8.69",
     "react": "^18.3.1",
     "react-color": "^2.19.3",
     "react-dom": "^18.3.1",
-    "react-pdf": "7.0.0",
     "react-router-dom": "^6.22.2",
     "react-select": "^5.10.1",
     "tailwind-merge": "^2.6.0",
@@ -32,7 +31,6 @@
   "devDependencies": {
     "@eslint/js": "^9.9.1",
     "@types/node": "^22.15.30",
-    "@types/pdfjs-dist": "^2.10.377",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
@@ -45,15 +43,7 @@
     "tailwindcss": "^3.4.1",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.3.0",
-    "vite": "^5.4.2"
-  },
-  "resolutions": {
-    "pdfjs-dist": "4.8.69"
-  },
-  "overrides": {
-    "pdfjs-dist": "4.8.69",
-    "react-pdf": {
-      "pdfjs-dist": "4.8.69"
-    }
+    "vite": "^5.4.2",
+    "vite-plugin-csp": "^1.1.2"
   }
 }

@@ -11,6 +11,7 @@ export interface Blueprint {
   dateUploaded: Date;
   pageCount: number;
   fileUrl: string;
+  fileName: string;
   status: 'processing' | 'ready' | 'error';
 }
 
@@ -61,6 +62,7 @@ const mockBlueprints: Blueprint[] = [
     dateUploaded: new Date('2024-01-15'),
     pageCount: 4,
     fileUrl: '/blueprints/residential-alpha.pdf',
+    fileName: 'residential-alpha.pdf',
     status: 'ready'
   },
   {
@@ -72,6 +74,7 @@ const mockBlueprints: Blueprint[] = [
     dateUploaded: new Date('2024-02-03'),
     pageCount: 12,
     fileUrl: '/blueprints/commercial-beta.pdf',
+    fileName: 'commercial-beta.pdf',
     status: 'ready'
   },
   {
@@ -83,6 +86,7 @@ const mockBlueprints: Blueprint[] = [
     dateUploaded: new Date('2024-02-28'),
     pageCount: 2,
     fileUrl: '/blueprints/renovation-gamma.pdf',
+    fileName: 'renovation-gamma.pdf',
     status: 'ready'
   }
 ];
@@ -105,6 +109,7 @@ export const useBlueprintStore = create<BlueprintState>((set, get) => ({
       dateUploaded: new Date(),
       pageCount: blueprint.pageCount || 1,
       fileUrl: blueprint.fileUrl || '',
+      fileName: blueprint.fileName || '',
       status: 'processing'
     };
     
@@ -248,6 +253,7 @@ export const useBlueprintStore = create<BlueprintState>((set, get) => ({
           .from(STORAGE_BUCKET)
           .getPublicUrl(bp.storage_path)
           .data.publicUrl,
+        fileName: bp.name,
         thumbnail: sampleThumbnails[Math.floor(Math.random() * sampleThumbnails.length)]
       }));
 
@@ -339,6 +345,7 @@ export const useBlueprintStore = create<BlueprintState>((set, get) => ({
         dateUploaded: new Date(),
         pageCount: 1,
         fileUrl: publicUrl,
+        fileName: metadata.name,
         thumbnail: sampleThumbnails[Math.floor(Math.random() * sampleThumbnails.length)]
       };
       

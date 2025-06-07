@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
-import Button from '../components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import BlueprintViewer from '../components/blueprint/BlueprintViewer';
 import ChatInterface from '../components/chat/ChatInterface';
-import { useBlueprintStore } from '../stores/blueprintStore';
+import { useBlueprintStore } from '@/stores/blueprintStore';
+import { formatDate } from '@/utils/date';
 
 const Blueprint = () => {
   const { id } = useParams<{ id: string }>();
@@ -31,7 +32,7 @@ const Blueprint = () => {
     if (id) {
       const blueprint = getBlueprint(id);
       if (blueprint) {
-        selectBlueprint(id);
+        selectBlueprint(blueprint);
       } else {
         navigate('/dashboard');
       }
@@ -57,11 +58,19 @@ const Blueprint = () => {
         </Button>
         <div>
           <h1 className="text-xl font-bold text-gray-900">{blueprint.name}</h1>
-          {blueprint.project && (
-            <p className="text-gray-500 text-sm">
-              Project: {blueprint.project}
-            </p>
-          )}
+          <div className="space-y-2 text-sm text-gray-600">
+            <div>Created: {formatDate(blueprint.dateUploaded)}</div>
+            {blueprint.project_id && (
+              <div>
+                Project ID: {blueprint.project_id}
+              </div>
+            )}
+            {blueprint.description && (
+              <div>
+                Description: {blueprint.description}
+              </div>
+            )}
+          </div>
         </div>
       </div>
       

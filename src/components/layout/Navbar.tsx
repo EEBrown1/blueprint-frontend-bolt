@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X, FileText, Settings, LogOut } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
-import Button from '../ui/Button';
+import { Button } from '../ui/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Navbar = () => {

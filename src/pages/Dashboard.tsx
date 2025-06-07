@@ -1,26 +1,37 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PlusCircle, Search, Filter } from 'lucide-react';
-import Button from '../components/ui/Button';
-import BlueprintCard from '../components/blueprint/BlueprintCard';
-import BlueprintUploader from '../components/blueprint/BlueprintUploader';
+import { Button } from '../components/ui/Button';
+import { BlueprintCard } from '../components/blueprint/BlueprintCard';
+import { BlueprintUploader } from '../components/blueprint/BlueprintUploader';
 import { useBlueprintStore } from '../stores/blueprintStore';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
   const [showUploader, setShowUploader] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const { blueprints, deleteBlueprint } = useBlueprintStore();
+  const { blueprints, deleteBlueprint, fetchBlueprints, isLoading, error } = useBlueprintStore();
   
+  useEffect(() => {
+    fetchBlueprints();
+  }, [fetchBlueprints]);
+
   const filteredBlueprints = blueprints.filter(
     (blueprint) => 
       blueprint.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       blueprint.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      blueprint.project?.toLowerCase().includes(searchQuery.toLowerCase())
+      blueprint.project_id?.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
-  const handleDeleteBlueprint = (id: string) => {
+  const handleDeleteBlueprint = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this blueprint?')) {
-      deleteBlueprint(id);
+      try {
+        await deleteBlueprint(id);
+        // Refresh the list after deletion
+        fetchBlueprints();
+      } catch (error) {
+        console.error('Failed to delete blueprint:', error);
+      }
     }
   };
   
@@ -57,15 +68,23 @@ const Dashboard = () => {
           Filter
         </Button>
       </div>
-      
-      {filteredBlueprints.length === 0 && searchQuery !== '' ? (
+
+      {isLoading ? (
+        <div className="flex items-center justify-center p-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+          {error}
+        </div>
+      ) : searchQuery && filteredBlueprints.length === 0 ? (
         <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
           <h3 className="text-lg font-medium text-gray-900 mb-2">No results found</h3>
           <p className="text-gray-600">
             No blueprints match your search query "{searchQuery}".
           </p>
         </div>
-      ) : filteredBlueprints.length === 0 ? (
+      ) : blueprints.length === 0 ? (
         <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
           <h3 className="text-lg font-medium text-gray-900 mb-2">No blueprints yet</h3>
           <p className="text-gray-600 mb-6">
@@ -90,7 +109,13 @@ const Dashboard = () => {
       
       <AnimatePresence>
         {showUploader && (
-          <BlueprintUploader onClose={() => setShowUploader(false)} />
+          <BlueprintUploader 
+            onClose={() => setShowUploader(false)} 
+            onSuccess={() => {
+              setShowUploader(false);
+              fetchBlueprints(); // Refresh the list after successful upload
+            }}
+          />
         )}
       </AnimatePresence>
     </div>

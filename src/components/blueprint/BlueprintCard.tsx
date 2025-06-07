@@ -9,7 +9,7 @@ interface BlueprintCardProps {
   onDelete: (id: string) => void;
 }
 
-const BlueprintCard = ({ blueprint, onDelete }: BlueprintCardProps) => {
+export const BlueprintCard = ({ blueprint, onDelete }: BlueprintCardProps) => {
   return (
     <motion.div 
       className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col"
@@ -48,9 +48,9 @@ const BlueprintCard = ({ blueprint, onDelete }: BlueprintCardProps) => {
           <span>Uploaded {formatDate(blueprint.dateUploaded)}</span>
         </div>
         
-        {blueprint.project && (
+        {blueprint.project_id && (
           <div className="inline-block bg-gray-100 rounded-full px-3 py-1 text-xs text-gray-700 mb-3">
-            {blueprint.project}
+            {blueprint.project_id}
           </div>
         )}
       </div>
@@ -81,5 +81,3 @@ const BlueprintCard = ({ blueprint, onDelete }: BlueprintCardProps) => {
     </motion.div>
   );
 };
-
-export default BlueprintCard;

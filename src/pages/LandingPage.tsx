@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   FileText, MessageSquare, ZoomIn, Upload, 
-  CheckCircle, ChevronDown, ChevronRight 
+  CheckCircle, ChevronDown, ChevronRight, ArrowRight, Check 
 } from 'lucide-react';
-import Button from '../components/ui/Button';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '../components/ui/Button';
+import { useAuth } from '../hooks/useAuth';
 
 // Define pricing tiers
 const pricingTiers = [

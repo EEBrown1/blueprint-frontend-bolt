@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import Blueprint from './pages/Blueprint';
@@ -11,30 +11,56 @@ import Layout from './components/layout/Layout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Settings from './pages/Settings';
 import { useAuthStore } from './stores/authStore';
+import { supabase } from './lib/supabase';
 
 function App() {
   const { checkAuth } = useAuthStore();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    checkAuth();
+    const init = async () => {
+      try {
+        console.log('Starting app initialization...');
+        console.log('Checking auth...');
+        await checkAuth();
+        console.log('Auth check complete');
+      } catch (error) {
+        console.error('Initialization failed:', error);
+      } finally {
+        console.log('Setting loading to false');
+        setIsLoading(false);
+      }
+    };
+
+    init();
   }, [checkAuth]);
+
+  console.log('App render - isLoading:', isLoading);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      
-      <Route element={<ProtectedRoute />}>
-        <Route element={<Layout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/blueprint/:id" element={<Blueprint />} />
-          <Route path="/settings" element={<Settings />} />
+      <Route path="/" element={<Layout />}>
+        <Route index element={<LandingPage />} />
+        <Route path="login" element={<Login />} />
+        <Route path="register" element={<Register />} />
+        <Route path="forgot-password" element={<ForgotPassword />} />
+        
+        <Route element={<ProtectedRoute />}>
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="blueprint/:id?" element={<Blueprint />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
+        
+        <Route path="*" element={<NotFound />} />
       </Route>
-      
-      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

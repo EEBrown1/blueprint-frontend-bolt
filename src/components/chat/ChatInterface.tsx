@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, RotateCcw, ChevronRight, ChevronDown } from 'lucide-react';
-import Button from '../ui/Button';
+import { Button } from '../ui/Button';
 import { useChatStore } from '../../stores/chatStore';
 import { motion, AnimatePresence } from 'framer-motion';
 

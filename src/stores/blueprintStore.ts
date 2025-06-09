@@ -270,109 +270,88 @@ export const useBlueprintStore = create<BlueprintState>((set, get) => ({
     }
   },
 
-  uploadBlueprint: async (file: File, metadata) => {
-    set({ uploadProgress: 0, error: null });
-    
+  uploadBlueprint: async (file: File, metadata: { name: string; project_id?: string; description?: string }) => {
+    set({ isLoading: true, error: null });
+
     try {
-      // Get the current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError || !user) {
-        throw new Error('Authentication required to upload blueprints');
-      }
+      // Generate a unique file name
+      const fileName = `${generateId()}-${file.name}`;
+      const filePath = `blueprints/${fileName}`;
 
-      // Generate document ID
-      const documentId = generateId();
-      const storagePath = `documents/${documentId}.pdf`;
-
-      // 1. First create the database record
-      const { data: blueprintData, error: insertError } = await supabase
-        .from('pdf_documents')
-        .insert({
-          id: documentId,
-          name: metadata.name,
-          project_id: metadata.project_id,
-          description: metadata.description,
-          storage_path: storagePath,
-          uploaded_by: user.id, // Critical for RLS
-          page_count: 1,
-          status: 'processing',
-          access_level: 'private'
-        })
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error('Database insert failed:', insertError);
-        throw new Error(`Failed to create blueprint record: ${insertError.message}`);
-      }
-
-      if (!blueprintData) {
-        throw new Error('Failed to create blueprint record: No data returned');
-      }
-
-      // 2. Then upload the file to storage
+      // Upload file to Supabase storage
       const { error: uploadError } = await supabase.storage
         .from(STORAGE_BUCKET)
-        .upload(storagePath, file);
+        .upload(filePath, file);
 
       if (uploadError) {
-        // If storage upload fails, clean up the database record
-        const { error: cleanupError } = await supabase
-          .from('pdf_documents')
-          .delete()
-          .eq('id', documentId);
-          
-        if (cleanupError) {
-          console.error('Failed to cleanup database record after storage upload failure:', cleanupError);
-        }
-        
-        throw new Error(`Failed to upload file: ${uploadError.message}`);
+        throw uploadError;
       }
 
-      // Get the public URL for the uploaded file
-      const { data: { publicUrl } } = supabase.storage
+      // Get the public URL
+      const { data: urlData } = await supabase.storage
         .from(STORAGE_BUCKET)
-        .getPublicUrl(storagePath);
+        .getPublicUrl(filePath);
 
-      // Add the new blueprint to the store
+      if (!urlData?.publicUrl) {
+        throw new Error('Failed to get public URL');
+      }
+
+      // Store the URL globally for chat
+      window.currentBlueprintUrl = urlData.publicUrl;
+
+      // Save to localStorage for persistence
+      localStorage.setItem('currentBlueprintUrl', urlData.publicUrl);
+
+      // Create new blueprint object
       const newBlueprint: Blueprint = {
-        id: documentId,
+        id: generateId(),
         name: metadata.name,
-        project_id: metadata.project_id,
         description: metadata.description,
-        status: 'processing',
+        project_id: metadata.project_id,
+        thumbnail: sampleThumbnails[Math.floor(Math.random() * sampleThumbnails.length)],
         dateUploaded: new Date(),
         pageCount: 1,
-        fileUrl: publicUrl,
-        fileName: metadata.name,
-        thumbnail: sampleThumbnails[Math.floor(Math.random() * sampleThumbnails.length)]
+        fileUrl: urlData.publicUrl,
+        fileName: file.name,
+        status: 'processing'
       };
-      
+
+      // Add to state
       set(state => ({
         blueprints: [newBlueprint, ...state.blueprints],
-        uploadProgress: 100
+        selectedBlueprint: newBlueprint,
+        isLoading: false,
+        error: null
       }));
 
-      // Process the PDF
-      setTimeout(() => {
+      // Initialize blueprint analysis
+      try {
+        await fetch('http://localhost:8000/api/analyze-blueprint', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileUrl: urlData.publicUrl })
+        });
+
+        // Update status to ready after successful analysis
         set(state => ({
           blueprints: state.blueprints.map(bp =>
-            bp.id === newBlueprint.id
-              ? { ...bp, status: 'ready' }
-              : bp
+            bp.id === newBlueprint.id ? { ...bp, status: 'ready' } : bp
           )
         }));
-      }, 3000);
+      } catch (analysisError) {
+        console.error('Analysis error:', analysisError);
+        set(state => ({
+          blueprints: state.blueprints.map(bp =>
+            bp.id === newBlueprint.id ? { ...bp, status: 'error' } : bp
+          )
+        }));
+      }
 
     } catch (error) {
-      console.error('Upload failed:', error);
       set({ 
         error: error instanceof Error ? error.message : 'Failed to upload blueprint',
-        isLoading: false,
-        uploadProgress: 0
+        isLoading: false 
       });
-      throw error;
     }
   },
 

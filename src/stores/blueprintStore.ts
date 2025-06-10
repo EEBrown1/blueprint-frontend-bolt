@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { generateId } from '../lib/utils';
-import { supabase, STORAGE_BUCKET } from '../lib/supabase';
+import { supabase, STORAGE_BUCKET } from '../lib/supabaseClient';
 
 export interface Blueprint {
   id: string;

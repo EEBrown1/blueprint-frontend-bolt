@@ -11,7 +11,6 @@ import Layout from './components/layout/Layout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Settings from './pages/Settings';
 import { useAuthStore } from './stores/authStore';
-import { supabase } from './lib/supabase';
 
 function App() {
   const { checkAuth } = useAuthStore();
@@ -20,22 +19,16 @@ function App() {
   useEffect(() => {
     const init = async () => {
       try {
-        console.log('Starting app initialization...');
-        console.log('Checking auth...');
         await checkAuth();
-        console.log('Auth check complete');
       } catch (error) {
         console.error('Initialization failed:', error);
       } finally {
-        console.log('Setting loading to false');
         setIsLoading(false);
       }
     };
 
     init();
   }, [checkAuth]);
-
-  console.log('App render - isLoading:', isLoading);
 
   if (isLoading) {
     return (

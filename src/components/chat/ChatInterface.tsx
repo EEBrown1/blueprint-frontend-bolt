@@ -45,12 +45,15 @@ const ChatInterface = ({ blueprintId }: ChatInterfaceProps) => {
     }
   }, [blueprintId, initializeChat]);
   
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (message.trim() === '') return;
     
-    sendMessage(message);
+    const currentMessage = message;
     setMessage('');
     setShowSuggestions(false);
+    
+    // Send message after UI state is updated
+    await sendMessage(currentMessage);
     
     // Focus input after sending
     if (inputRef.current) {

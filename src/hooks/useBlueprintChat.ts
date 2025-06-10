@@ -81,7 +81,10 @@ export const useBlueprintChat = (fileUrl: string | undefined) => {
       timestamp: new Date()
     };
     
+    // Update messages state with user message first
     setMessages(prev => [...prev, userMessage]);
+    
+    // Set loading state after user message is added
     setIsLoading(true);
     setError(null);
 
@@ -92,29 +95,41 @@ export const useBlueprintChat = (fileUrl: string | undefined) => {
       });
 
       // Add assistant response while preserving all previous messages
-      setMessages(prev => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: response.data.answer,
-          timestamp: new Date()
-        }
-      ]);
+      setMessages(prev => {
+        // Ensure user message is still in the state
+        const hasUserMessage = prev.some(msg => msg.id === userMessage.id);
+        const baseMessages = hasUserMessage ? prev : [...prev, userMessage];
+        
+        return [
+          ...baseMessages,
+          {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: response.data.answer,
+            timestamp: new Date()
+          }
+        ];
+      });
     } catch (err) {
       const errorMessage = handleApiError(err);
       setError(errorMessage);
       
-      // Add error message to chat while preserving previous messages
-      setMessages(prev => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          role: 'system',
-          content: `Sorry, I encountered an error: ${errorMessage}. Please try again.`,
-          timestamp: new Date()
-        }
-      ]);
+      // Add error message to chat while preserving previous messages including user message
+      setMessages(prev => {
+        // Ensure user message is still in the state
+        const hasUserMessage = prev.some(msg => msg.id === userMessage.id);
+        const baseMessages = hasUserMessage ? prev : [...prev, userMessage];
+        
+        return [
+          ...baseMessages,
+          {
+            id: (Date.now() + 1).toString(),
+            role: 'system',
+            content: `Sorry, I encountered an error: ${errorMessage}. Please try again.`,
+            timestamp: new Date()
+          }
+        ];
+      });
     } finally {
       setIsLoading(false);
     }
